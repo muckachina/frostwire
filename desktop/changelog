@@ -1,3 +1,48 @@
+frostwire (6.7.2) stable; urgency=high
+  * New jlibtorrent 1.2.0.18-RC11
+  * Library updates: openssl-1.1.1-pre9
+  * New user agent and peer finger print for tracker announcement
+  * Search: YT, Archive.org fixes
+  * UX: Torrent Transfer Detail General > Save Location can be clicked to open
+    the OS's default file explorer to show the file/folder pertinent to the transfer
+  * Fixes bug in macOS handling opened files
+  * Translations updated (Ukranian, Norwegian, Turkish)
+
+ -- FrostWire Team <contact@frostwire.com>  Wed, 22 Aug 2018 18:23:44 -0600
+
+
+frostwire (6.7.1) stable; urgency=high
+  * UX: Torrent Transfer Tracker viewer now tracks DHT, LSD and PEX information
+  * UX: Added border at the top of the global status bar at the bottom of the screen
+  * UX: Transfer tab title, search filter box and filter buttons in the same row
+	saving precious vertical screen space for smaller screens
+  * UX: better resizing of transfer detail components
+  * UX: transfer detail component rendering optimizations
+  * UX: fixes bug in search result rendering
+  * UX: window resizing fixes for Transfers tab, Library explorer
+  * Windscribe VPN false-negative detection in Windows fixed
+  * Translations updated
+  * Search fixes
+  * Crash fixed when translating tooltips
+  * Crashes and optimizations
+
+ -- FrostWire Team <contact@frostwire.com>  Thu, 24 Jul 2018 00:01:08 -0600
+
+frostwire (6.7.0) stable; urgency=high
+  * New Torrent Transfer Details components
+  * New Torrent Transfer General viewer
+  * New Torrent Transfer Piece viewer
+  * New Torrent Transfer Files progress viewer
+  * New Torrent Transfer Tracker viewer
+  * New Torrent Transfer Peers viewer
+  * TorrentDownloads search fixed
+  * LimeTorrents search fixed
+  * New jlibtorrent 1.2.0.18-RC9
+  * Italian, French, Portuguese, Spanish translations updated
+  * Crashes and optimizations
+
+ -- FrostWire Team <contact@frostwire.com>  Fri, 13 Jul 2018 08:23:28 -0600
+
 frostwire (6.6.8) stable; urgency=high
   * Yify search fixed
   * EZTV search fixed

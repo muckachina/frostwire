@@ -19,16 +19,36 @@ package com.frostwire.android.offers;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
 
 import com.andrew.apollo.utils.MusicUtils;
 import com.frostwire.android.core.Constants;
 import com.frostwire.android.gui.util.UIUtils;
 import com.frostwire.util.Logger;
+import com.frostwire.util.Ref;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.logging.MoPubLog;
+import com.mopub.common.privacy.ConsentDialogListener;
+import com.mopub.common.privacy.ConsentStatus;
+import com.mopub.common.privacy.ConsentStatusChangeListener;
+import com.mopub.common.privacy.PersonalInfoManager;
+import com.mopub.common.util.Reflection;
+import com.mopub.mobileads.AdMobBannerAdapter;
+import com.mopub.mobileads.AdMobInterstitialAdapter;
+import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
 
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static com.frostwire.android.util.Asyncs.async;
 
 /**
  * Created on Nov/8/16 (2016 US election day)
@@ -37,16 +57,18 @@ import java.util.Set;
  * @author gubatron
  */
 
-public class MoPubAdNetwork extends AbstractAdNetwork {
+public class MoPubAdNetwork extends AbstractAdNetwork implements ConsentStatusChangeListener {
     private static final Logger LOG = Logger.getLogger(MoPubAdNetwork.class);
     private static final boolean DEBUG_MODE = Offers.DEBUG_MODE;
-    private Map<String,String> placements;
-    private Map<String, MoPubInterstitial> interstitials;
-
     public static final String UNIT_ID_AUDIO_PLAYER = "c737d8a55b2e41189aa1532ae0520ad1";
+    public static final String UNIT_ID_HOME = "8174d0bcc3684259b3fdbc8e1310682e"; // aka 300×250 Search Screen
     public static final String UNIT_ID_PREVIEW_PLAYER_VERTICAL = "a8be0cad4ad0419dbb19601aef3a18d2";
     public static final String UNIT_ID_PREVIEW_PLAYER_HORIZONTAL = "2fd0fafe3d3c4d668385a620caaa694e";
     public static final String UNIT_ID_SEARCH_HEADER = "be0b959f15994fd5b56c997f63530bd0";
+    private final Bundle npaBundle = new Bundle();
+    private boolean starting = false;
+    private Map<String,String> placements;
+    private Map<String, MoPubInterstitial> interstitials;
 
     @Override
     public void initialize(Activity activity) {
@@ -54,19 +76,60 @@ public class MoPubAdNetwork extends AbstractAdNetwork {
             LOG.info("initialize() aborted");
             return;
         }
+        if (activity == null) {
+            LOG.info("initialize() activity is null, aborted");
+            return;
+        }
+        if (starting) {
+            LOG.info("initialize() aborted, starting.");
+            return;
+        }
+        starting = true;
         initPlacementMappings(UIUtils.isTablet(activity.getResources()));
+        SdkConfiguration sdkConfiguration = new SdkConfiguration.Builder(UNIT_ID_SEARCH_HEADER)
+                .withMediationSettings(
+                        new AdMobBannerAdapter.GooglePlayServicesMediationSettings(npaBundle),
+                        new AdMobInterstitialAdapter.GooglePlayServicesMediationSettings(npaBundle))
+                .build();
+        fixExecutor(true);
+        MoPub.initializeSdk(activity, sdkConfiguration, () -> {
+            fixExecutor(false);
+            LOG.info("MoPub initialization finished");
+            starting = false;
+            start();
+            async(MoPubAdNetwork::loadConsentDialogAsync, this);
+            loadNewInterstitial(activity);
+        });
+        LOG.info("initialize() MoPub.initializeSdk invoked, starting=" + starting + ", started=" + started());
+    }
 
-        // Note 1: Not performing this .initializeSdk(...) call for now.
-        // It's only needed for personalized ads and rewarded videos which we don't have.
-        // It was causing the FrostWire process to be relaunched after a shutdown.
+    private void fixExecutor(boolean change) {
+        try {
+            LOG.info("MoPub -> fixExecutor with change=" + change);
+            Field f = Reflection.getPrivateField(AsyncTask.class, "sDefaultExecutor");
 
-        // Note 2: unsure how this works for many ads, and multiple networks.
-        // for now just adding the main search banner seems to work for other
-        // banner units
-        //SdkConfiguration sdkConfiguration = new SdkConfiguration.Builder(UNIT_ID_SEARCH_HEADER).build();
-        //MoPub.initializeSdk(activity, sdkConfiguration, null);
-        start();
-        loadNewInterstitial(activity);
+            Field modifiersField = Field.class.getDeclaredField("accessFlags");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
+
+            if (change) {
+                f.set(null, AsyncTask.THREAD_POOL_EXECUTOR);
+            } else {
+                f.set(null, AsyncTask.SERIAL_EXECUTOR);
+            }
+        } catch (Exception e) {
+            LOG.info("MoPub -> fixExecutor error change=" + change + " msg=" + e.getMessage());
+        }
+    }
+
+    private static void loadConsentDialogAsync(MoPubAdNetwork mopubAdNetwork) {
+        PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
+        //personalInfoManager.forceGdprApplies(); //uncomment to test in the US
+
+        if (personalInfoManager != null && personalInfoManager.shouldShowConsentDialog()) {
+            personalInfoManager.subscribeConsentStatusChangeListener(mopubAdNetwork);
+            personalInfoManager.loadConsentDialog(new MoPubAdNetwork.MoPubConsentDialogListener(personalInfoManager));
+        }
     }
 
     private void initPlacementMappings(boolean isTablet) {
@@ -149,6 +212,7 @@ public class MoPubAdNetwork extends AbstractAdNetwork {
     @Override
     public void stop(Context context) {
         super.stop(context);
+        starting = false;
         if (placements == null || interstitials == null || placements.isEmpty() || interstitials.isEmpty()) {
             return;
         }
@@ -158,6 +222,39 @@ public class MoPubAdNetwork extends AbstractAdNetwork {
             if (interstitial != null) {
                 interstitial.destroy();
             }
+        }
+    }
+
+    @Override
+    public void onConsentStateChange(@NonNull ConsentStatus oldConsentStatus,
+                                     @NonNull ConsentStatus newConsentStatus,
+                                     boolean canCollectPersonalInformation) {
+        if (!canCollectPersonalInformation) {
+            npaBundle.putString("npa","1");
+        } else {
+            npaBundle.remove("npa");
+        }
+    }
+
+    public static final class MoPubConsentDialogListener implements ConsentDialogListener {
+        private final WeakReference<PersonalInfoManager> pmRef;
+
+        public MoPubConsentDialogListener(PersonalInfoManager pm) {
+            pmRef = Ref.weak(pm);
+        }
+
+        @Override
+        public void onConsentDialogLoaded() {
+            if (!Ref.alive(pmRef)) {
+                return;
+            }
+            PersonalInfoManager personalInfoManager = pmRef.get();
+            personalInfoManager.showConsentDialog();
+        }
+
+        @Override
+        public void onConsentDialogLoadFailed(@NonNull MoPubErrorCode moPubErrorCode) {
+            MoPubLog.i("Consent dialog failed to load.");
         }
     }
 }

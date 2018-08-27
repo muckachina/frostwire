@@ -168,8 +168,9 @@ public final class GUIUtils {
      *         <code>bytes</code> argument evaluates to, with
      *         "KB"/"MB"/"GB"/TB" appended at the end. If the input value is
      *         negative, the string returned will be "? KB".
+     * @see GUIUtils::rate2speed() if you want to deal with download speeds
      */
-    public static String toUnitbytes(long bytes) {
+    public static String getBytesInHuman(long bytes) {
         if (bytes < 0) {
             return "? " + GENERAL_UNIT_KILOBYTES;
         }

@@ -129,6 +129,8 @@ public class MainActivity extends AbstractActivity implements
     private final LocalBroadcastReceiver localBroadcastReceiver;
     private TimerSubscription playerSubscription;
 
+    private boolean shuttingdown = false;
+
     public MainActivity() {
         super(R.layout.activity_main);
         controller = new MainController(this);
@@ -175,10 +177,8 @@ public class MainActivity extends AbstractActivity implements
             showLastBackDialog();
             lastBackDialogShown = true;
         }
-
         syncNavigationMenu();
         updateHeader(getCurrentFragment());
-
         if (!lastBackDialogShown) {
             Offers.showInterstitialOfferIfNecessary(
                     this,
@@ -190,6 +190,14 @@ public class MainActivity extends AbstractActivity implements
     }
 
     public void shutdown() {
+        if (shuttingdown) {
+            // NOTE: the actual solution should be for a re-architecture for
+            // a guarantee of a single call of this logic.
+            // For now, just mitigate the double call if coming from the exit
+            // and at the same time the close of the interstitial
+            return;
+        }
+        shuttingdown = true;
         LocalSearchEngine.instance().cancelSearch();
         Offers.stopAdNetworks(this);
         //UXStats.instance().flush(true); // sends data and ends 3rd party APIs sessions.
@@ -257,7 +265,7 @@ public class MainActivity extends AbstractActivity implements
     }
 
     public void updateNavigationMenu(boolean updateAvailable) {
-        LOG.info("updateNavigationMenu("+updateAvailable+")");
+        LOG.info("updateNavigationMenu(" + updateAvailable + ")");
         if (navigationMenu == null) {
             setupDrawer();
         }
@@ -327,9 +335,9 @@ public class MainActivity extends AbstractActivity implements
             intent.setAction(null);
             if (uri != null) {
                 if (uri.startsWith("file") ||
-                    uri.startsWith("http") ||
-                    uri.startsWith("https") ||
-                    uri.startsWith("magnet")) {
+                        uri.startsWith("http") ||
+                        uri.startsWith("https") ||
+                        uri.startsWith("magnet")) {
                     TransferManager.instance().downloadTorrent(uri, new HandpickedTorrentDownloadDialogOnFetch(this));
                 } else if (uri.startsWith("content")) {
                     String newUri = saveViewContent(this, Uri.parse(uri), "content-intent.torrent");
@@ -349,9 +357,7 @@ public class MainActivity extends AbstractActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
         localBroadcastReceiver.register(this);
-
         setupDrawer();
         ConfigurationManager CM = ConfigurationManager.instance();
         if (CM.getBoolean(Constants.PREF_KEY_GUI_INITIAL_SETTINGS_COMPLETE)) {
@@ -364,22 +370,18 @@ public class MainActivity extends AbstractActivity implements
         registerMainBroadcastReceiver();
         syncNavigationMenu();
         updateNavigationMenu();
-
         //uncomment to test social links dialog
         //UIUtils.showSocialLinksDialog(this, true, null, "");
         if (CM.getBoolean(Constants.PREF_KEY_GUI_TOS_ACCEPTED)) {
             checkExternalStoragePermissionsOrBindMusicService();
         }
-
         async(NetworkManager.instance(), NetworkManager::queryNetworkStatusBackground);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
         localBroadcastReceiver.unregister(this);
-
         if (mainBroadcastReceiver != null) {
             try {
                 unregisterReceiver(mainBroadcastReceiver);
@@ -392,18 +394,15 @@ public class MainActivity extends AbstractActivity implements
 
     private SparseArray<DangerousPermissionsChecker> initPermissionsCheckers() {
         SparseArray<DangerousPermissionsChecker> checkers = new SparseArray<>();
-
         // EXTERNAL STORAGE ACCESS CHECKER.
         final DangerousPermissionsChecker externalStorageChecker =
                 new DangerousPermissionsChecker(this, DangerousPermissionsChecker.EXTERNAL_STORAGE_PERMISSIONS_REQUEST_CODE);
         //externalStorageChecker.setPermissionsGrantedCallback(() -> {});
         checkers.put(DangerousPermissionsChecker.EXTERNAL_STORAGE_PERMISSIONS_REQUEST_CODE, externalStorageChecker);
-
         // COARSE
         final DangerousPermissionsChecker accessCoarseLocationChecker =
                 new DangerousPermissionsChecker(this, DangerousPermissionsChecker.ACCESS_COARSE_LOCATION_PERMISSIONS_REQUEST_CODE);
         checkers.put(DangerousPermissionsChecker.ACCESS_COARSE_LOCATION_PERMISSIONS_REQUEST_CODE, accessCoarseLocationChecker);
-
         // add more permissions checkers if needed...
         return checkers;
     }
@@ -429,16 +428,13 @@ public class MainActivity extends AbstractActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_FrostWire);
         super.onCreate(savedInstanceState);
-
         if (!ConfigurationManager.instance().getBoolean(Constants.PREF_KEY_GUI_TOS_ACCEPTED)) {
             // we are still in the wizard.
             return;
         }
-
         if (isShutdown()) {
             return;
         }
-
         checkExternalStoragePermissionsOrBindMusicService();
         checkAccessCoarseLocationPermissions();
     }
@@ -470,24 +466,22 @@ public class MainActivity extends AbstractActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         if (search != null) {
             // this is necessary because the Fragment#onDestroy is not
             // necessary called right in the Activity#onDestroy call, making
             // the internal mopub view possible to outlive the activity
             // destruction, creating a context leak
             search.destroyHeaderBanner();
+            // TODO: make a unique call for these destroys
+            search.destroyPromotionsBanner();
         }
-
         if (playerSubscription != null) {
             playerSubscription.unsubscribe();
         }
-
         if (mToken != null) {
             MusicUtils.unbindFromService(mToken);
             mToken = null;
         }
-
         // necessary unregisters broadcast its internal receivers, avoids leaks.
         Offers.destroyMopubInterstitials(this);
     }
@@ -699,14 +693,13 @@ public class MainActivity extends AbstractActivity implements
         FragmentTransaction transaction = getFragmentManager().beginTransaction().show(fragment);
         try {
             transaction.commitAllowingStateLoss();
-        } catch (Throwable ignored) {}
-
+        } catch (Throwable ignored) {
+        }
         if (addToStack && (fragmentsStack.isEmpty() || fragmentsStack.peek() != fragment.getId())) {
             fragmentsStack.push(fragment.getId());
         }
         currentFragment = fragment;
         updateHeader(fragment);
-
         if (currentFragment instanceof MainFragment) {
             ((MainFragment) currentFragment).onShow();
         }
@@ -760,11 +753,9 @@ public class MainActivity extends AbstractActivity implements
             }
             return false;
         }
-
         if (item == null) {
             return false;
         }
-
         switch (item.getItemId()) {
             default:
                 return super.onOptionsItemSelected(item);
@@ -867,7 +858,6 @@ public class MainActivity extends AbstractActivity implements
         try {
             File data = Platforms.data();
             File parent = data.getParentFile();
-
             if (!AndroidPlatform.saf(parent)) {
                 return false;
             }
@@ -906,7 +896,6 @@ public class MainActivity extends AbstractActivity implements
         try {
             inStream = context.getContentResolver().openInputStream(uri);
             outStream = new FileOutputStream(target);
-
             byte[] buffer = new byte[16384]; // MAGIC_NUMBER
             int bytesRead;
             if (inStream != null) {
@@ -921,7 +910,6 @@ public class MainActivity extends AbstractActivity implements
             IOUtils.closeQuietly(inStream);
             IOUtils.closeQuietly(outStream);
         }
-
         return "file://" + target.getAbsolutePath();
     }
 
@@ -961,7 +949,6 @@ public class MainActivity extends AbstractActivity implements
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-
             if (Constants.ACTION_NOTIFY_UPDATE_AVAILABLE.equals(action)) {
                 boolean value = intent.getBooleanExtra("value", false);
                 Intent mainActivityIntent = getIntent();
@@ -970,7 +957,6 @@ public class MainActivity extends AbstractActivity implements
                 }
                 updateNavigationMenu(value);
             }
-
             if (Constants.ACTION_NOTIFY_DATA_INTERNET_CONNECTION.equals(action)) {
                 boolean isDataUp = intent.getBooleanExtra("isDataUp", true);
                 if (!isDataUp) {

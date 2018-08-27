@@ -1,6 +1,6 @@
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
- * Copyright (c) 2011-2015, FrostWire(R). All rights reserved.
+ * Copyright (c) 2011-2018, FrostWire(R). All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 package com.limegroup.gnutella.gui;
 
 import com.frostwire.gui.HideExitDialog;
+import com.frostwire.gui.bittorrent.BTDownload;
 import com.frostwire.gui.bittorrent.BTDownloadMediator;
 import com.frostwire.gui.components.slides.Slide;
 import com.frostwire.gui.library.LibraryMediator;
@@ -26,6 +27,7 @@ import com.frostwire.gui.player.MediaPlayer;
 import com.frostwire.gui.player.MediaSource;
 import com.frostwire.gui.tabs.Tab;
 import com.frostwire.gui.tabs.TransfersTab;
+import com.frostwire.jlibtorrent.TorrentInfo;
 import com.frostwire.search.soundcloud.SoundcloudSearchResult;
 import com.frostwire.search.torrent.TorrentSearchResult;
 import com.frostwire.search.youtube.YouTubeCrawledSearchResult;
@@ -229,6 +231,8 @@ public final class GUIMediator {
      */
     private static boolean _allowVisible = false;
 
+    private final RefreshTimer timer;
+
     /**
      * Private constructor to ensure that this class cannot be constructed from
      * another class.
@@ -239,6 +243,7 @@ public final class GUIMediator {
 
         _remoteDownloadsAllowed = true;
 
+        this.timer = new RefreshTimer();
     }
 
     /**
@@ -263,11 +268,6 @@ public final class GUIMediator {
      * Notification that the core has been initialized.
      */
     void coreInitialized() {
-        startTimer();
-    }
-
-    private void startTimer() {
-        RefreshTimer timer = new RefreshTimer();
         timer.startTimer();
     }
 
@@ -478,9 +478,9 @@ public final class GUIMediator {
      * Refreshes the various gui components that require refreshing.
      */
     final void refreshGUI() {
-        for (RefreshListener aREFRESH_LIST : REFRESH_LIST) {
+        for (RefreshListener listener : REFRESH_LIST) {
             try {
-                aREFRESH_LIST.refresh();
+                listener.refresh();
             } catch (Throwable t) {
                 // Show the error for each RefreshListener individually
                 // so that we continue refreshing the other items.
@@ -656,13 +656,19 @@ public final class GUIMediator {
     }
 
     public final void openTorrentFile(File torrentFile, boolean partialSelection) {
-        Runnable onOpenRunnable = new Runnable() {
-            @Override
-            public void run() {
-                showTransfers(TransfersTab.FilterMode.ALL);
+        BTDownloadMediator btDownloadMediator = getBTDownloadMediator();
+        List<BTDownload> downloads = getBTDownloadMediator().getDownloads();
+
+        Runnable onOpenRunnable = () -> {
+            showTransfers(TransfersTab.FilterMode.ALL);
+            TorrentInfo ti = new TorrentInfo(torrentFile);
+            for (BTDownload btDownload : downloads) {
+                if (btDownload.getHash().equals(ti.infoHash().toHex())) {
+                    btDownloadMediator.selectBTDownload(btDownload);
+                }
             }
         };
-        getBTDownloadMediator().openTorrentFile(torrentFile, partialSelection, onOpenRunnable);
+        btDownloadMediator.openTorrentFile(torrentFile, partialSelection, onOpenRunnable);
 
     }
 
@@ -828,6 +834,7 @@ public final class GUIMediator {
      * Shutdown the program cleanly.
      */
     public static void shutdown() {
+        instance().timer.stopTimer(); // TODO: refactor this singleton pattern
         hideVideoPlayerWindow();
         Finalizer.shutdown();
     }

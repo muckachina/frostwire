@@ -6391,7 +6391,7 @@ public class StringUtils {
      *
      * <p>Specifically:</p>
      * <ul>
-     *   <li>If the number of characters in {@code str} is less than or equal to 
+     *   <li>If the number of characters in {@code str} is less than or equal to
      *       {@code maxWidth}, return {@code str}.</li>
      *   <li>Else abbreviate it to {@code (substring(str, 0, max-3) + "...")}.</li>
      *   <li>If {@code maxWidth} is less than {@code 4}, throw an
@@ -7265,7 +7265,7 @@ public class StringUtils {
     }
     
     /**
-     * Calculates the number of characters from the beginning of the strings that match exactly one-to-one, 
+     * Calculates the number of characters from the beginning of the strings that match exactly one-to-one,
      * up to a maximum of four (4) characters.
      * @param first The first string.
      * @param second The second string.

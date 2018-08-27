@@ -25,6 +25,7 @@ import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.frostwire.android.BuildConfig;
@@ -70,33 +71,38 @@ public final class AboutFragment extends AbstractFragment {
         Button loveFrostWireButton = findView(rootView, R.id.fragment_about_love_frostwire);
         setupClickUrl(loveFrostWireButton, Constants.FROSTWIRE_GIVE_URL + "plus-about");
 
-        if (Constants.IS_GOOGLE_PLAY_DISTRIBUTION) {
-            loveFrostWireButton.setVisibility(View.GONE);
-        }
-
         ImageButton facebookButton = findView(rootView, R.id.fragment_about_facebook_button);
         ImageButton twitterButton = findView(rootView, R.id.fragment_about_twitter_button);
         ImageButton redditButton = findView(rootView, R.id.fragment_about_reddit_button);
         ImageButton githubButton = findView(rootView, R.id.fragment_about_github_button);
+        ImageButton slackButton = findView(rootView, R.id.fragment_about_slack_button);
 
         String referrerParam = "?ref=android_about";
         setupClickUrl(facebookButton, Constants.SOCIAL_URL_FACEBOOK_PAGE + referrerParam);
         setupClickUrl(twitterButton, Constants.SOCIAL_URL_TWITTER_PAGE + referrerParam);
         setupClickUrl(redditButton, Constants.SOCIAL_URL_REDDIT_PAGE + referrerParam);
         setupClickUrl(githubButton, Constants.SOCIAL_URL_GITHUB_PAGE + referrerParam);
+        setupClickUrl(slackButton, Constants.SOCIAL_URL_SLACK_PAGE + referrerParam);
 
         //Remaining elements including text content
-        TextView stickersShop = findView(rootView, R.id.fragment_about_stickers);
-        TextView sendFeedback = findView(rootView, R.id.fragment_about_feedback);
+        TextView supportFrostWire = findView(rootView, R.id.fragment_about_support_frostwire);
+        ImageView supportFrostWireDivider = findView(rootView, R.id.fragment_about_support_frostwire_divider);
         TextView translateHelp = findView(rootView, R.id.fragment_about_translate);
+        TextView contactUs = findView(rootView, R.id.fragment_about_contact_us);
 
-        setupClickUrl(stickersShop, Constants.STICKERS_SHOP_URL);
-        setupClickUrl(sendFeedback, Constants.CONTACT_US_URL);
+        setupClickUrl(supportFrostWire, Constants.STICKERS_SHOP_URL);
         setupClickUrl(translateHelp, Constants.TRANSLATE_HELP_URL);
+        setupClickUrl(contactUs, Constants.CONTACT_US_URL);
 
         TextView content = findView(rootView, R.id.fragment_about_content);
         content.setText(Html.fromHtml(getAboutText()));
         content.setMovementMethod(LinkMovementMethod.getInstance());
+
+        if (Constants.IS_GOOGLE_PLAY_DISTRIBUTION) {
+            loveFrostWireButton.setVisibility(View.GONE);
+            supportFrostWire.setVisibility(View.GONE);
+            supportFrostWireDivider.setVisibility(View.GONE);
+        }
     }
 
     private String getAboutText() {

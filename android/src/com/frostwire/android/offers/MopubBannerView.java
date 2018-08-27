@@ -59,7 +59,7 @@ public class MopubBannerView extends LinearLayout {
         void dispatch();
     }
 
-    private static Logger LOG = Logger.getLogger(MopubBannerView.class);
+    private static final Logger LOG = Logger.getLogger(MopubBannerView.class);
     private ImageButton dismissBannerButton;
     private MoPubView moPubView;
     private ImageView fallbackBannerView;
@@ -170,7 +170,8 @@ public class MopubBannerView extends LinearLayout {
             }
 
             if (!Offers.MOPUB.started()) {
-                LOG.warn("MopubSquaredBanner.loadMoPubBanner() abort moPubView loading, MOPUB not started");
+                LOG.warn("MopubBannerView.loadMoPubBanner() abort moPubView loading, MOPUB not started. Loading fallback");
+                loadFallbackBanner(adUnitId);
                 return;
             }
 
@@ -182,7 +183,8 @@ public class MopubBannerView extends LinearLayout {
             try {
                 moPubView.loadAd();
             } catch (Throwable e) {
-                LOG.warn("MopubSquaredBanner banner could not be loaded", e);
+                LOG.warn("MopubBannerView banner could not be loaded", e);
+                e.printStackTrace();
                 loadFallbackBanner(adUnitId);
                 moPubView.destroy();
             }
@@ -192,7 +194,8 @@ public class MopubBannerView extends LinearLayout {
     private void loadFallbackBanner(final String adUnitId) {
         InHouseBannerFactory.AdFormat adFormat;
         if (MoPubAdNetwork.UNIT_ID_AUDIO_PLAYER.equals(adUnitId) ||
-                MoPubAdNetwork.UNIT_ID_PREVIEW_PLAYER_HORIZONTAL.equals(adUnitId)) {
+            MoPubAdNetwork.UNIT_ID_PREVIEW_PLAYER_HORIZONTAL.equals(adUnitId) ||
+            MoPubAdNetwork.UNIT_ID_HOME.equals(adUnitId)) {
             adFormat = InHouseBannerFactory.AdFormat.BIG_300x250;
         } else if (MoPubAdNetwork.UNIT_ID_SEARCH_HEADER.equals(adUnitId) ||
                 MoPubAdNetwork.UNIT_ID_PREVIEW_PLAYER_VERTICAL.equals(adUnitId)) {
@@ -202,6 +205,8 @@ public class MopubBannerView extends LinearLayout {
         }
         InHouseBannerFactory.loadAd(fallbackBannerView, adFormat);
         setVisible(Visibility.FALLBACK, true);
+        setVisibility(View.VISIBLE);
+        dismissBannerButton.setVisibility(showDismissButton ? View.VISIBLE : View.INVISIBLE);
     }
 
     public void setVisible(Visibility visibility, boolean visible) {
@@ -263,7 +268,13 @@ public class MopubBannerView extends LinearLayout {
         public void onBannerLoaded(MoPubView banner) {
             LOG.info("onBannerLoaded()");
             setVisible(Visibility.MOPUB, true);
-            PrebidManager.getInstance(getContext().getApplicationContext()).onBannerLoaded(getContext(), banner, PrebidManager.Placement.AUDIO_PLAYER_BANNER_300_250);
+
+
+            PrebidManager prebidManager = PrebidManager.getInstance(getContext());
+            if (prebidManager != null) {
+                prebidManager.onBannerLoaded(banner, PrebidManager.Placement.AUDIO_PLAYER_BANNER_300_250);
+            }
+
             isLoaded = true;
             if (onBannerLoadedListener != null) {
                 try {
@@ -278,7 +289,10 @@ public class MopubBannerView extends LinearLayout {
         public void onBannerFailed(MoPubView banner, MoPubErrorCode errorCode) {
             LOG.info("onBannerFailed");
             loadFallbackBanner(banner.getAdUnitId());
-            PrebidManager.getInstance(getContext().getApplicationContext()).onBannerFailed(getContext(), banner, PrebidManager.Placement.AUDIO_PLAYER_BANNER_300_250, errorCode);
+            PrebidManager prebidManager = PrebidManager.getInstance(getContext());
+            if (prebidManager != null) {
+                prebidManager.onBannerFailed(banner, PrebidManager.Placement.AUDIO_PLAYER_BANNER_300_250, errorCode);
+            }
             banner.destroy();
             isLoaded = false;
         }

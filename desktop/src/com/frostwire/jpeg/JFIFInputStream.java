@@ -420,8 +420,8 @@ public class JFIFInputStream extends FilterInputStream {
     /**
      * Skips over and discards <code>n</code> b of data from the 
      * input stream. The <code>skip</code> method may, for a variety of 
-     * reasons, end up skipping over some smaller number of b, 
-     * possibly <code>0</code>. The actual number of b skipped is 
+     * reasons, end up skipping over some smaller number of b,
+     * possibly <code>0</code>. The actual number of b skipped is
      * returned. 
      * <p>
      * This method

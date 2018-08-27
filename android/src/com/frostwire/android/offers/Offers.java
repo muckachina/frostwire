@@ -76,14 +76,15 @@ public final class Offers {
                 adNetwork.initialize(activity);
             }
         }
-        PrebidManager.getInstance(activity.getApplicationContext());
-        LOG.info("Offers.initAdNetworks() sucess");
+        PrebidManager.getInstance(activity);
+        LOG.info("Offers.initAdNetworks() success");
+        return;
     }
 
     public static void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (AD_NETWORKS == null) {
-            return;
-        }
+//        if (AD_NETWORKS == null) {
+//            return;
+//        }
     }
 
     private static Map<String, AdNetwork> getAllAdNetworks() {
@@ -132,15 +133,13 @@ public final class Offers {
                                         String placement,
                                         final boolean shutdownAfterwards,
                                         final boolean dismissAfterwards) {
-        boolean interstitialShown = false;
-
         if (Offers.disabledAds()) {
             LOG.info("Skipping interstitial ads display, PlayStore reports no ads");
         } else {
             for (AdNetwork adNetwork : getActiveAdNetworks()) {
-                if (!interstitialShown && adNetwork != null && adNetwork.started()) {
+                if (adNetwork != null && adNetwork.started()) {
                     LOG.info("showInterstitial: AdNetwork " + adNetwork.getClass().getSimpleName() + " started? " + adNetwork.started());
-                    interstitialShown = adNetwork.showInterstitial(activity, placement, shutdownAfterwards, dismissAfterwards);
+                    boolean interstitialShown = adNetwork.showInterstitial(activity, placement, shutdownAfterwards, dismissAfterwards);
                     if (interstitialShown) {
                         ConfigurationManager.instance().setLong(Constants.PREF_KEY_GUI_INTERSTITIAL_LAST_DISPLAY, System.currentTimeMillis());
                         LOG.info("showInterstitial: " + adNetwork.getClass().getSimpleName() + " interstitial shown");
@@ -152,18 +151,17 @@ public final class Offers {
             }
         }
 
-        if (!interstitialShown) {
-            if (dismissAfterwards) {
-                activity.finish();
+        if (dismissAfterwards) {
+            activity.finish();
+        }
+        if (shutdownAfterwards) {
+            if (activity instanceof MainActivity) {
+                ((MainActivity) activity).shutdown();
+            } else {
+                UIUtils.sendShutdownIntent(activity);
             }
-            if (shutdownAfterwards) {
-                if (activity instanceof MainActivity) {
-                    ((MainActivity) activity).shutdown();
-                } else {
-                    UIUtils.sendShutdownIntent(activity);
-                }
-            }
-        } // otherwise it's up to the interstitial and its listener to dismiss or shutdown if necessary.
+        }
+        // otherwise it's up to the interstitial and its listener to dismiss or shutdown if necessary.
     }
 
     public static void showInterstitialOfferIfNecessary(Activity ctx, String placement,
@@ -403,9 +401,9 @@ public final class Offers {
                 }
 
                 if (finishAfterDismiss) {
-                    if (adNetwork != null) {
-                        adNetwork.stop(activity);
-                    }
+//                    if (adNetwork != null) {
+//                        adNetwork.stop(activity);
+//                    }
 
                     if (activity instanceof MainActivity) {
                         activity.finish();
@@ -415,7 +413,7 @@ public final class Offers {
                     }
                 }
 
-                if (!finishAfterDismiss && !shutdownAfter && tryBack2BackRemoveAdsOffer) {
+                if (!finishAfterDismiss && tryBack2BackRemoveAdsOffer) {
                     LOG.info("dismissAndOrShutdownIfNecessary: Offers.tryBackToBackInterstitial(activityRef);");
                     Offers.tryBackToBackInterstitial(activity);
                 }

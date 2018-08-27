@@ -2348,7 +2348,7 @@ public class IOUtils {
      * 
      * @throws IOException if there is a problem reading the file
      * @throws IllegalArgumentException if toSkip is negative
-     * @throws EOFException if the number of bytes skipped was incorrect 
+     * @throws EOFException if the number of bytes skipped was incorrect
      * @since 2.0
      */
     public static void skipFully(InputStream input, long toSkip) throws IOException {

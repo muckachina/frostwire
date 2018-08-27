@@ -1,10 +1,32 @@
-FrostWire 2.0.6 build 544 - JUL/03/2018
+FrostWire 2.0.8 build 558 - AUG/27/2018
+ - YT search fixed
+ - Archive.org search fixed
+ - Translations updated: Hebrew, Japanese, Dutch, Romanian, Russian, Slovak, Serbian, Dutch,
+   Afrikaans, Ukranian
+ - New jlibtorrent 1.2.0.18-RC11
+ - Library updates: openssl-1.1.1-pre9, presage-moat-3.0.23-3.0.14
+ - New user agent and peer finger print for tracker announcement
+
+FrostWire 2.0.7 build 556 - AUG/09/2018
+ - Crash on Audio Player equalizer menu
+ - Translations updated: Croatian, Thai, Indonesian, Polish, Italian,
+   French, Afrikaans, Arabic, Czech, Danish, Finnish, Hungarian
+ - Library updates: applovin 8.1.0, (dev) gradle 4.9,
+   gms:play-services-base:15.0.1
+ - Fixes bug on banner dismissal button behavior
+ - Fixes bug displaying short file names in My Files
+ - New GDPR consent dialog for European users
+ - Freeze fixes
+
+FrostWire 2.0.6 build 546 - JUL/10/2018
  - Yify search fixed
  - EZTV search fixed
  - TorrentDownloads search fixed, now magnet based
- - New jlibtorrent 1.2.0.18-RC8
+ - LimeTorrents search fixed
+ - New jlibtorrent 1.2.0.18-RC9
  - Translations updated: Malay, Slovak, Vietnamese, Chinese
  - Library updates: prebid 0.4, (dev) buildtools 28.0.1, (dev) gradle 4.8.1
+   mopub 5.2.0, applovin 8.0.2
 
 FrostWire 2.0.5 build 541 - JUN/17/2018
  - No more intrusive interstitial ads when resuming app

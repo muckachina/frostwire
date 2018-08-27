@@ -17,6 +17,7 @@
 
 package com.limegroup.gnutella.util;
 
+import com.frostwire.bittorrent.BTContext;
 import org.apache.commons.io.IOUtils;
 import org.limewire.setting.SettingsFactory;
 import org.limewire.util.CommonUtils;
@@ -40,12 +41,12 @@ public final class FrostWireUtils {
     /**
      * Constant for the current version of FrostWire.
      */
-    private static final String FROSTWIRE_VERSION = "6.6.8";
+    private static final String FROSTWIRE_VERSION = "6.7.2";
 
     /**
      * Build number for the current version, gets reset to 1 on every version bump
      */
-    private static final int BUILD_NUMBER = 260;
+    private static final int BUILD_NUMBER = 270;
 
     private static final boolean IS_RUNNING_FROM_SOURCE = new File("README.md").exists();
 
@@ -169,5 +170,17 @@ public final class FrostWireUtils {
         }
 
         return videoFile;
+    }
+
+    /**
+     *
+     * @return 4 int array with { MAJOR.MINOR.REVISION.BUILD
+     */
+    public static void getFrostWireVersionBuild(final int result[]) {
+        String[] vStrArray = getFrostWireVersion().split("\\.");
+        result[0] = Integer.valueOf(vStrArray[0]);
+        result[1] = Integer.valueOf(vStrArray[1]);
+        result[2] = Integer.valueOf(vStrArray[2]);
+        result[3] = getBuildNumber();
     }
 }

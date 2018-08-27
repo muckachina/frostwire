@@ -45,7 +45,6 @@ import com.frostwire.platform.FileSystem;
 import com.frostwire.platform.Platforms;
 import com.frostwire.search.torrent.TorrentCrawledSearchResult;
 import com.frostwire.util.Logger;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -53,6 +52,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -150,9 +150,24 @@ public final class BTEngine extends SessionManager {
         sp.set_bool(settings_pack.bool_types.enable_dht.swigValue(), ctx.enableDht);
         sp.set_bool(settings_pack.bool_types.upnp_ignore_nonrouters.swigValue(), true);
 
+
         if (ctx.optimizeMemory) {
             sp.set_bool(settings_pack.bool_types.enable_ip_notifier.swigValue(), false);
         }
+
+        String fwFingerPrint = libtorrent.generate_fingerprint("FW", ctx.version[0], ctx.version[1], ctx.version[2], ctx.version[3]);
+        sp.set_str(settings_pack.string_types.peer_fingerprint.swigValue(), fwFingerPrint);
+
+        String userAgent = String.format(Locale.ENGLISH,
+                "FrostWire/%d.%d.%d libtorrent/%s",
+                ctx.version[0],
+                ctx.version[1],
+                ctx.version[2],
+                libtorrent.version());
+        sp.set_str(settings_pack.string_types.user_agent.swigValue(), userAgent);
+
+        System.out.println("Peer Fingerprint: " + sp.get_str(settings_pack.string_types.peer_fingerprint.swigValue()));
+        System.out.println("User Agent: " + sp.get_str(settings_pack.string_types.user_agent.swigValue()));
 
         super.start(params);
     }

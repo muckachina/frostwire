@@ -17,7 +17,9 @@ package com.limegroup.gnutella.gui.tables;
 
 import com.frostwire.gui.bittorrent.PaymentOptionsRenderer;
 import com.frostwire.gui.bittorrent.TransferActionsRenderer;
+import com.frostwire.gui.bittorrent.TransferDetailFilesActionsRenderer;
 import com.frostwire.gui.bittorrent.TransferSeedingRenderer;
+import com.frostwire.gui.components.transfers.TransferDetailFiles;
 import com.limegroup.gnutella.gui.ButtonRow;
 import com.limegroup.gnutella.gui.GUIConstants;
 import com.limegroup.gnutella.gui.PaddedPanel;
@@ -162,6 +164,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
     private static TransferActionsRenderer TRANSFER_ACTIONS_RENDERER;
     private static TransferSeedingRenderer TRANSFER_SEEDING_RENDERER;
     private static PaymentOptionsRenderer PAYMENT_OPTIONS_RENDERER;
+    private static TransferDetailFilesActionsRenderer TRANSFER_DETAIL_FILE_ACTIONS_RENDERER;
 
     /**
      * Resorter -- for doing real-time resorts.
@@ -375,6 +378,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
         TABLE.setDefaultRenderer(SpeedRenderer.class, getSpeedRenderer());
         TABLE.setDefaultRenderer(Date.class, getDateRenderer());
         TABLE.setDefaultRenderer(NameHolder.class, getNameHolderRenderer());
+        TABLE.setDefaultRenderer(TransferDetailFiles.TransferItemHolder.class, getTransferDetailFileActionsRenderer());
         
         if (getAbstractActionsRenderer() != null) {
             TABLE.setDefaultRenderer(AbstractActionsHolder.class, getAbstractActionsRenderer());
@@ -416,7 +420,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
      * in the correct order, and are either visible or not visible,
      * depending on the user's preferences.
      */
-    protected void setupTableHeaders() {
+    private void setupTableHeaders() {
         ColumnPreferenceHandler cph = createDefaultColumnPreferencesHandler();
         cph.setWidths();
         cph.setOrder();
@@ -446,7 +450,6 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
         tablePane.setLayout(new BoxLayout(tablePane, BoxLayout.Y_AXIS));
 
         SCROLL_PANE = new JScrollPane(TABLE);
-        
         tablePane.add(SCROLL_PANE);
 
         TABLE_PANE = tablePane;
@@ -516,7 +519,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
      * Removes the selection from where the row was added,
      * and puts the focus on a previously selected row.
      */
-    protected void fixSelection(int addedAt, boolean inView) {
+    private void fixSelection(int addedAt, boolean inView) {
         if (addedAt >= 0 && addedAt < DATA_MODEL.getRowCount()) {
             // unselect the row to address a Java bug
             // (if the previous row was selected,
@@ -547,13 +550,13 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
     /**
      * Removes the row.
      */
-    public void removeRow(int row) {
+    private void removeRow(int row) {
         DATA_MODEL.remove(row);
     }
 
-    /**
-     * Moves a row in the table to a new location. 
-     * @param oldLocation - table row to move
+    /*
+      Moves a row in the table to a new location.
+      @param oldLocation - table row to move
      * @param newLocation - location to insert the table row after it had been removed
      */
 //    public void moveRow(int oldLocation, int newLocation) {
@@ -654,7 +657,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
      * If the table wants to use a custom popup menu, override this
      * method and do something different.
      */
-    protected JPopupMenu createColumnSelectionMenu() {
+    private JPopupMenu createColumnSelectionMenu() {
         return (new ColumnSelectionMenu(TABLE)).getComponent();
     }
 
@@ -780,7 +783,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
     /**
      * Helper-function to clear selected items.
      */
-    protected void clearSelection() {
+    public void clearSelection() {
         TABLE.clearSelection();
         handleNoSelection();
     }
@@ -837,7 +840,7 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
          * currently showing, are sorting in real time, and are not
          * actively being sorted.
          */
-        public void doResort(boolean isForce) {
+        void doResort(boolean isForce) {
             // TABLE.isShowing() should be checked last, since it's a
             // recursive call (and thus the most expensive)
             // through all the parents of the table.
@@ -1017,5 +1020,12 @@ public abstract class AbstractTableMediator<T extends DataLineModel<E, I>, E ext
             PAYMENT_OPTIONS_RENDERER = new PaymentOptionsRenderer();
         }
         return PAYMENT_OPTIONS_RENDERER;
+    }
+
+    protected TransferDetailFilesActionsRenderer getTransferDetailFileActionsRenderer() {
+        if (TRANSFER_DETAIL_FILE_ACTIONS_RENDERER == null) {
+            TRANSFER_DETAIL_FILE_ACTIONS_RENDERER = new TransferDetailFilesActionsRenderer();
+        }
+        return TRANSFER_DETAIL_FILE_ACTIONS_RENDERER;
     }
 }

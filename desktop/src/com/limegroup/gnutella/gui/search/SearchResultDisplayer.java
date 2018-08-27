@@ -60,7 +60,7 @@ public final class SearchResultDisplayer implements RefreshListener {
 
     /** The contents of tabbedPane. 
      *  INVARIANT: entries.size()==# of tabs in tabbedPane 
-     *  LOCKING: +obtain entries' monitor before adjusting number of 
+     *  LOCKING: +obtain entries' monitor before adjusting number of
      *            outstanding searches, i.e., the number of tabs
      *           +obtain a ResultPanel's monitor before adding or removing 
      *            results + to prevent deadlock, never obtain ResultPanel's

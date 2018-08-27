@@ -147,6 +147,7 @@ public final class SearchHeaderBanner extends LinearLayout {
         }
         setBannerViewVisibility(BannerType.MOPUB, false);
         loadFallbackBanner();
+        dismissBannerButton.setOnClickListener(new DismissBannerButtonClickListener(this));
 
         if (!Offers.MOPUB.started()) {
             return;
@@ -167,7 +168,6 @@ public final class SearchHeaderBanner extends LinearLayout {
             loadFallbackBanner();
             moPubView.destroy();
         }
-        dismissBannerButton.setOnClickListener(new DismissBannerButtonClickListener(this));
     }
 
 
@@ -284,7 +284,10 @@ public final class SearchHeaderBanner extends LinearLayout {
 
             if (Ref.alive(searchHeaderBannerRef)) {
                 Context context = searchHeaderBannerRef.get().getContext();
-                PrebidManager.getInstance(context.getApplicationContext()).onBannerLoaded(context, banner, PrebidManager.Placement.SEARCH_HEADER_BANNER_320_50);
+                PrebidManager prebidManager = PrebidManager.getInstance(context);
+                if (prebidManager != null) {
+                    prebidManager.onBannerLoaded(banner, PrebidManager.Placement.SEARCH_HEADER_BANNER_320_50);
+                }
             }
         }
 
@@ -310,7 +313,10 @@ public final class SearchHeaderBanner extends LinearLayout {
             }
             if (Ref.alive(searchHeaderBannerRef)) {
                 Context context = searchHeaderBannerRef.get().getContext();
-                PrebidManager.getInstance(context.getApplicationContext()).onBannerFailed(context, banner, PrebidManager.Placement.SEARCH_HEADER_BANNER_320_50, errorCode);
+                PrebidManager prebidManager = PrebidManager.getInstance(context);
+                if (prebidManager != null) {
+                    prebidManager.onBannerFailed(banner, PrebidManager.Placement.SEARCH_HEADER_BANNER_320_50, errorCode);
+                }
             }
         }
 
