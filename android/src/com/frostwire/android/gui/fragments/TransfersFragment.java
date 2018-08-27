@@ -239,6 +239,7 @@ public class TransfersFragment extends AbstractFragment implements TimerObserver
     public void onDestroyView() {
         super.onDestroyView();
         subscription.unsubscribe();
+        adapter = null;
     }
 
     @Override
@@ -286,6 +287,10 @@ public class TransfersFragment extends AbstractFragment implements TimerObserver
 
     @Override
     public void onTime() {
+        if (!isVisible()) {
+            return;
+        }
+
         if (adapter != null) {
             async(this,
                     TransfersFragment::sortSelectedStatusTransfersInBackground,
